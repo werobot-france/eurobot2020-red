@@ -2,6 +2,12 @@ import React from 'react';
 import Two from 'two.js';
 import Button from '@material-ui/core/Button';
 import { Card, Grid } from '@material-ui/core';
+import Io from 'socket.io-client'
+
+import 'xterm/css/xterm.css'
+
+import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit'
 
 export default class App extends React.Component {
 
@@ -33,10 +39,12 @@ export default class App extends React.Component {
     this.crossGroup = null
     this.mesurePoints = []
     this.mouseCapture = false
+    this.socket = Io.connect('http://localhost:3002/gritty')
   }
 
   render() {
     return <div>
+      <div id="terminal"></div>
       <div className="board-row">
         <div className="canvas-container-container">
           <div className="canvas-container">
@@ -232,7 +240,61 @@ export default class App extends React.Component {
     }})
   }
 
-  componentDidMount() {
+  componentDidMount() { 
+    // gritty('.terminal', {
+    //     prefix: 'console',
+    //     command: 'bash',
+    //     autoRestart: true,
+    //     cwd: '/',
+    //     env: {
+    //         TERMINAL: 'gritty'
+    //     },
+    //     socket: this.socket
+    // });
+
+    const fitAddon = new FitAddon();
+    const terminal = new Terminal({
+        scrollback: 1000,
+        tabStopWidth: 4,
+        fontFamily: 'Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace'
+    });
+    
+    terminal.open(document.getElementById('terminal'));
+    terminal.focus();
+    
+    terminal.loadAddon(fitAddon);
+    fitAddon.fit();
+    
+    terminal.onResize(data => {
+      console.log(data)
+      //this.socket.emit('resize', data);
+    });
+    terminal.onData((data) => {
+      this.socket.emit('data', data);
+    });
+
+    const {cols, rows} = terminal;
+
+    let autoRestart = true
+    let cwd = '/'
+    let command = 'bash'
+    let env = {}
+
+    this.socket.on('accept', () => {
+      this.socket.emit('terminal', {env, cwd, cols, rows, command, autoRestart});
+      this.socket.emit('resize', {cols, rows});
+      fitAddon.fit();
+    });
+    this.socket.on('disconnect', () => {
+      terminal.writeln('YAYAYAY terminal disconnected...');
+    });
+    this.socket.on('data', (data) => {
+      terminal.write(data)
+    });
+    
+    window.addEventListener('resize', () => {
+      fitAddon.fit();
+    });
 
     this.canvas = document.getElementById('canvas')
     
