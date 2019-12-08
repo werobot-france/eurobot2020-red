@@ -6809,6 +6809,11 @@ nice-try@^1.0.4:
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"
   integrity sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==
 
+nipplejs@^0.8.4:
+  version "0.8.4"
+  resolved "https://registry.yarnpkg.com/nipplejs/-/nipplejs-0.8.4.tgz#dc0d98918cb302f029f58d5abc6888bbb137b7fa"
+  integrity sha512-yyS0a+nFLOdZD/Cb7mzJzHrl7A7OnjtildGKhpbtUJTadPWRcNJ2O5+2ZV5YgAy/OouEyt/NkJ/SFx8fCZvocw==
+
 no-case@^2.2.0:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/no-case/-/no-case-2.3.2.tgz#60b813396be39b3f1288a4c1ed5d1e7d28b464ac"

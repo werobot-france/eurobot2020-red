@@ -4,7 +4,10 @@ import Button from '@material-ui/core/Button';
 import { Card, Grid } from '@material-ui/core';
 import Io from 'socket.io-client'
 
+//import Eel from './eel'
+
 import 'xterm/css/xterm.css'
+import Nipple from 'nipplejs'
 
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
@@ -25,7 +28,8 @@ export default class App extends React.Component {
       },
       paused: false,
       mesure: false,
-      mesuredLength: '0.00'
+      mesuredLength: '0.00',
+      gotoMode: false
     }
     this.canvas = null
     this.two = null
@@ -36,10 +40,13 @@ export default class App extends React.Component {
     this.onCanvasMouseMouve = this.onCanvasMouseMouve.bind(this);
     this.onCanvasClick = this.onCanvasClick.bind(this);
     this.toggleMesure = this.toggleMesure.bind(this)
+    this.forward = this.forward.bind(this)
+    this.stop = this.stop.bind(this)
     this.crossGroup = null
     this.mesurePoints = []
     this.mouseCapture = false
-    this.socket = Io.connect('http://localhost:3002/gritty')
+    this.socket = null
+    this.goto = this.goto.bind(this);
   }
 
   render() {
@@ -58,9 +65,9 @@ export default class App extends React.Component {
           <Grid container className="coordinate-container" spacing={2}>
             <Grid item>
               <Card className="coordinate-card" xs={12} md={6}>
-                <pre className="coordinate-x">X: 0.000</pre>
-                <pre className="coordinate-y">Y: 0.000</pre>
-                <pre className="coordinate-t">θ: 0.000</pre>
+                <pre className="coordinate-x">X: {this.state.robot.x}</pre>
+                <pre className="coordinate-y">Y: {this.state.robot.y}</pre>
+                <pre className="coordinate-t">θ: {this.state.robot.theta}</pre>
               </Card>
             </Grid>
             <Grid item>
@@ -88,6 +95,18 @@ export default class App extends React.Component {
               <span>Mesure</span>
             }
           </Button>
+          <Button variant="contained" color="primary" onClick={this.goto} style={{marginTop: '1em'}}>
+            Go TO
+          </Button>
+          <Button variant="contained" color="primary" onMouseDown={this.forward} onMouseUp={this.stop} style={{marginTop: '1em'}}>
+            Forward
+          </Button>
+          <Button variant="contained" color="primary" onClick={this.stop} style={{marginTop: '1em'}}>
+            Stop
+          </Button>
+          <div className="joystick-container" id="joystick-container">
+
+          </div>
         </div>
       </div>
     </div>
@@ -100,6 +119,28 @@ export default class App extends React.Component {
   fromX = (coordinate) => (coordinate*3000)/this.canvasWidth
 
   fromY = (coordinate) => (coordinate*2000)/this.canvasHeight
+
+  forward() {
+    console.log('Forward')
+  }
+
+  stop() {
+    console.log('Stop')
+    this.socket.send(JSON.stringify({
+        cmd: 'stop'
+    }))
+  }
+
+  goto() {
+    console.log('toggle goto')
+    this.socket.send(JSON.stringify({
+        cmd: 'goto', 
+        args: {
+            x: parseFloat(this.state.mouse.position.x),
+            y: parseFloat(this.state.mouse.position.y)
+        }
+    }))
+  }
 
   onCanvasMouseMouve(event) {
     if (this.state.paused) {
@@ -252,49 +293,111 @@ export default class App extends React.Component {
     //     socket: this.socket
     // });
 
-    const fitAddon = new FitAddon();
-    const terminal = new Terminal({
-        scrollback: 1000,
-        tabStopWidth: 4,
-        fontFamily: 'Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace'
-    });
+    // const fitAddon = new FitAddon();
+    // const terminal = new Terminal({
+    //     scrollback: 1000,
+    //     tabStopWidth: 4,
+    //     fontFamily: 'Menlo, Consolas, "Liberation Mono", Monaco, "Lucida Console", monospace'
+    // });
     
-    terminal.open(document.getElementById('terminal'));
-    terminal.focus();
+    // terminal.open(document.getElementById('terminal'));
+    // terminal.focus();
     
-    terminal.loadAddon(fitAddon);
-    fitAddon.fit();
+    // terminal.loadAddon(fitAddon);
+    // fitAddon.fit();
     
-    terminal.onResize(data => {
-      console.log(data)
-      //this.socket.emit('resize', data);
-    });
-    terminal.onData((data) => {
-      this.socket.emit('data', data);
-    });
+    // terminal.onResize(data => {
+    //   console.log(data)
+    //   //this.socket.emit('resize', data);
+    // });
+    // terminal.onData((data) => {
+    //   this.socket.emit('data', data);
+    // });
 
-    const {cols, rows} = terminal;
+    // const {cols, rows} = terminal;
 
-    let autoRestart = true
-    let cwd = '/'
-    let command = 'bash'
-    let env = {}
+    // let autoRestart = true
+    // let cwd = '/'
+    // let command = 'bash'
+    // let env = {}
 
-    this.socket.on('accept', () => {
-      this.socket.emit('terminal', {env, cwd, cols, rows, command, autoRestart});
-      this.socket.emit('resize', {cols, rows});
-      fitAddon.fit();
-    });
-    this.socket.on('disconnect', () => {
-      terminal.writeln('YAYAYAY terminal disconnected...');
-    });
-    this.socket.on('data', (data) => {
-      terminal.write(data)
-    });
+    // this.socket.on('accept', () => {
+    //   this.socket.emit('terminal', {env, cwd, cols, rows, command, autoRestart});
+    //   this.socket.emit('resize', {cols, rows});
+    //   fitAddon.fit();
+    // });
+    // this.socket.on('disconnect', () => {
+    //   terminal.writeln('YAYAYAY terminal disconnected...');
+    // });
+    // this.socket.on('data', (dataPositionWatcher) => {
+    //   terminal.write(data)
+    // });
     
-    window.addEventListener('resize', () => {
-      fitAddon.fit();
-    });
+    // window.addEventListener('resize', () => {
+    //   fitAddon.fit();
+    // });
+    // let joysticks = Nipple.create({
+    //     zone: document.getElementById('joystick-container'),
+    //     mode: 'static',
+    //     position: {left: '50%', top: '50%'},
+    //     color: 'blue'
+    // });
+    // let joystick = joysticks.get(0)
+    
+    // let joystickPosition = []
+    // joystick.on('move', (evt, data) => {
+    //     // let angle = data.angle.radian
+    //     // let x = parseFloat(((Math.cos(angle) * data.distance)/50).toFixed(1))
+    //     // let y = parseFloat(((Math.sin(angle) * data.distance)/50).toFixed(1))
+    //     // //console.log([x, y])
+        
+    //     let x = 0.5
+    //     let y = 1
+    //     let a = data.angle.radian 
+    //     if (a > 0 && a < Math.PI/6) {
+    //         x = 1
+    //         y = 0.1
+    //     }
+    //     if (a > Math.PI/2 && a < Math.PI) {
+            
+    //     }
+    //     if (a > Math.PI && a < 3*Math.PI/2) {
+            
+    //     }
+    //     if (a > 3*Math.PI/2 && a < 2*Math.PI) {
+            
+    //     }
+    //     if (joystickPosition[0] !== x || joystickPosition[1] !== y) {
+    //         this.socket.emit('motors', [x, y])
+    //         joystickPosition = [x, y]
+    //     }
+    
+    // });
+    // joystick.on('end', () => {
+    //     console.log('end')
+    //     joystickPosition = [0, 0]
+    //     this.socket.emit('stop')
+    // });
+    this.socket = new WebSocket("ws://192.168.0.19:8080");
+    this.socket.onopen = () => {
+      console.log('A direct connexion with the python driver programm was etablished')
+    };
+    this.socket.onmessage = (evt) => {
+        let data = JSON.parse(evt.data)
+        if (data.event === 'updatePosition') {
+            let xCoordinate = data.data[0]
+            let yCoordinate = data.data[1]
+            let theta = data.data[2]
+            console.log(xCoordinate, yCoordinate, theta)
+            robotPoint.translation.x = robotGroup.translation.x = x(yCoordinate)
+            robotPoint.translation.y = robotGroup.translation.y = y(xCoordinate)
+            robotGroup.rotation = -theta + Math.PI/2
+            this.two.update()
+            this.setState({
+                robot: {x: xCoordinate, y: yCoordinate, theta: (theta * 180/Math.PI).toFixed(2)}
+            })
+        }
+    };
 
     this.canvas = document.getElementById('canvas')
     
@@ -345,13 +448,6 @@ export default class App extends React.Component {
         robotGroup.rotation = 0
 
         robotPoint = this.two.makeCircle(robotGroup.translation.x, robotGroup.translation.y, 2)
-        this.two.update()
-    }
-
-    window.updateRobot = (xCoordinate, yCoordinate, theta) => {
-        robotPoint.translation.x = robotGroup.translation.x = x(xCoordinate)
-        robotPoint.translation.y = robotGroup.translation.y = y(yCoordinate)
-        robotGroup.rotation = -theta + Math.PI/2
         this.two.update()
     }
 
