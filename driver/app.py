@@ -21,14 +21,13 @@ from src.Robot import *
 from sys import exit
 from os import _exit
 from math import pi
-from adafruit_crickit import crickit
-from src.InputManager import *
+#from src.InputManager import *
 from src.PositionWatcher import PositionWatcher
 from src.WebsocketManager import WebsocketManager
 
 
 websocketManager = WebsocketManager()
-websocketManager.start()
+#websocketManager.start()
 
 positionWatcher = PositionWatcher(websocketManager)
 positionWatcher.start()
@@ -44,17 +43,22 @@ websocketManager.setRobot(robot)
 #     print('Eel enabled!')
 #     positionWatcher.enableEel()
 
+
 def main():
+    robot.stop()
+    sleep(1)
+    robot.stop()
     print('Initialization')
-    while True:
-        time.sleep(1)
+    robot.goTo(0, 25, 5, True)
+    print('> exit')
 
 try:
     main()
     
 except KeyboardInterrupt:
     print('Interrupted')
-    robot.stopMotors()
+    robot.cancelOperations()
+    robot.stop()
     try:
         exit(0)
     except SystemExit:

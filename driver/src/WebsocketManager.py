@@ -20,6 +20,7 @@ class WebsocketManager(Thread):
     def __init__(self):
         self.context = None
         self.robot = None
+        self.online = False
         Thread.__init__(self)
         
     def setRobot(self, robot):
@@ -35,9 +36,10 @@ class WebsocketManager(Thread):
                 client.ws.send(rawJson)
         
     def isOnline(self):
-        return True
+        return self.online
     
     def run(self):
+        self.online = True
         manager = self
         class MainApplication(WebSocketApplication):
             def on_open(self):
@@ -61,6 +63,9 @@ class WebsocketManager(Thread):
                     manager.robot.cancelOperations()
                     manager.robot.stopMotors()
                     print('STOOOOP')
+                elif cmd == 'reset_pos':
+                    print('Reset pos command')
+                    manager.robot.positionWatcher.reset()
                 elif cmd == 'start_position_trace':
                     print('LOG# > Enabled position trace')
                 elif cmd == 'stop_position_trace':

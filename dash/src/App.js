@@ -41,6 +41,7 @@ export default class App extends React.Component {
     this.onCanvasClick = this.onCanvasClick.bind(this);
     this.toggleMesure = this.toggleMesure.bind(this)
     this.forward = this.forward.bind(this)
+    this.resetPosition = this.resetPosition.bind(this)
     this.stop = this.stop.bind(this)
     this.crossGroup = null
     this.mesurePoints = []
@@ -98,9 +99,12 @@ export default class App extends React.Component {
           <Button variant="contained" color="primary" onClick={this.goto} style={{marginTop: '1em'}}>
             Go TO
           </Button>
-          <Button variant="contained" color="primary" onMouseDown={this.forward} onMouseUp={this.stop} style={{marginTop: '1em'}}>
-            Forward
+          <Button variant="contained" color="secondary" onClick={this.resetPosition} style={{marginTop: '1em'}}>
+            Reset
           </Button>
+          {/* <Button variant="contained" color="primary" onMouseDown={this.forward} onMouseUp={this.stop} style={{marginTop: '1em'}}>
+            Forward
+          </Button> */}
           <Button variant="contained" color="primary" onClick={this.stop} style={{marginTop: '1em'}}>
             Stop
           </Button>
@@ -128,6 +132,13 @@ export default class App extends React.Component {
     console.log('Stop')
     this.socket.send(JSON.stringify({
         cmd: 'stop'
+    }))
+  }
+
+  resetPosition() {
+    console.log('Reset position')
+    this.socket.send(JSON.stringify({
+        cmd: 'reset_pos'
     }))
   }
 

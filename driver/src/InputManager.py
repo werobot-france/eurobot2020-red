@@ -1,8 +1,7 @@
 from threading import Thread
 from time import sleep
 import json
-from src.Motor import Motor
-from adafruit_crickit import crickit
+from src.Motors import Motors
 
 class InputExecutor(Thread):
     def __init__(self, robot, params):

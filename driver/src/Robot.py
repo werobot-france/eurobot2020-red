@@ -1,19 +1,20 @@
-from adafruit_crickit import crickit
 from math import *
 from time import sleep
 from gpiozero import DigitalInputDevice
+from .Motors import Motors
 
 class Robot:
-    leftMotor, rightMotor = crickit.dc_motor_1, crickit.dc_motor_2
     positionWatcher = None
     xR = yR = orientation = erreurPre = differenceErreurs = 0
     sommeErreurs = 0
     leftEndSwitch = DigitalInputDevice(13, True)
     rightEndSwitch = DigitalInputDevice(21, True)
     running = False
+    motors = None
 
     def __init__(self, positionWatcher):
         self.positionWatcher = positionWatcher
+        self.motors = Motors()
 
     def fetch(self):
         self.xR = self.positionWatcher.getPos()[0]
@@ -27,12 +28,14 @@ class Robot:
             self.fetch()
             deltaTheta = targetTheta - self.orientation
             if abs(deltaTheta) > pi:
-                deltaTheta = (2*pi - abs(deltaTheta)) * (-deltaTheta / abs(deltaTheta))
+                deltaTheta = (2*pi - abs(deltaTheta)) * - \
+                deltaTheta / abs(deltaTheta)
             if abs(deltaTheta) > seuilOrientation:
-                self.setBoth(0.8 * deltaTheta/abs(deltaTheta) + (0.2/pi/(deltaTheta)))
+                self.motors.setBoth(0.8 * deltaTheta/abs(deltaTheta) + (0.2/pi/(deltaTheta)))
             else:
                 self.running = False
-                self.stopMotors()
+                self.motors.stop()
+
 
     def goToPath(self, path, threehold):
         inc = 0
@@ -44,23 +47,18 @@ class Robot:
             self.goTo(point[0], point[1], t, mustStop)
             inc += 1
         print('ALL COMPLETED')
-  
-    def setLeft(self, pwm):
-        self.leftMotor.throttle = pwm
           
-    def setRight(self, pwm):
-        self.rightMotor.throttle = pwm
-          
-    def setBoth(self, pwm):
-        self.setLeft(-pwm)
-        self.setRight(pwm)
+    # def setBoth(self, pwm):
+    #     self.setLeft(-pwm)
+    #     self.setRight(pwm)
 
     def goTo(self, targetX, targetY, threehold, mustStop= False, backward = False):
+        print('> GOTO: ', {"x":targetX, "y":targetY, "threehold": threehold, "mustStop": mustStop, "backward": backward})
         self.fetch()
         a = 0
-        p, i, d = 190, 4, 550
+        p, i, d = 160, 2, 500
         #p, i, d = 190, 2, 400
-        vitesseC, vitesseR = 0.7 , 0.4
+        vitesseC, vitesseR = 0.7 , 0.5
         self.running = True
         self.sommeErreurs = 0
         distanceCibleI = sqrt((targetX-self.xR)*(targetX-self.xR)+(targetY-self.yR)*(targetY-self.yR))
@@ -86,7 +84,6 @@ class Robot:
 
             while abs(erreurOrientation) > pi:
                 erreurOrientation += (-2*pi) * (erreurOrientation/abs(erreurOrientation))
-                
             cmd = (erreurOrientation*p) + (self.sommeErreurs*i) + (self.differenceErreurs*d)
             cmdD += cmd
             cmdG -= cmd
@@ -117,26 +114,19 @@ class Robot:
             
             try:
                 if (not backward):
-                    self.leftMotor.throttle = cmdG
-                    self.rightMotor.throttle = cmdD
+                    self.motors.setLeft(cmdG)
+                    self.motors.setRight(cmdD)
                 else:
-                    self.leftMotor.throttle = -cmdD
-                    self.rightMotor.throttle = -cmdG
+                    self.motors.setLeft(-cmdD)
+                    self.motors.setRight(-cmdG)
             except ValueError:
                 print('_____________________ERREUR________________________')
                 print(-cmdG, cmdD)
             if distanceCible < threehold:
                 self.running = False
 
-            print('arrivé !  position:', (self.xR, self.yR, degrees(self.orientation)))
-            
-        print('exit of the loop')
-        if mustStop:
-            self.stopMotors()
-            self.goToOrientation(pi/2)
-
-    def stopMotors(self):
-        self.leftMotor.throttle = self.rightMotor.throttle = 0
+        print('arrivé !  position:', (self.xR, self.yR, degrees(self.orientation)))
+        if mustStop: self.motors.stop()
         
     def cancelOperations(self):
         self.running = False
@@ -153,11 +143,14 @@ class Robot:
             self.fetch()
             print(self.xR, self.yR, degrees(self.orientation))
             sleep(0.1)
+            
+    def stop(self):
+        self.motors.stop()
 
     def goUntilTouched(self):
-        self.leftMotor.throttle = -0.5
-        self.rightMotor.throttle = -0.5
+        self.motors.setLeft(-0.5)
+        self.motors.setRight(-0.5)
         while not(self.leftEndSwitch.value and self.rightEndSwitch.value):
             sleep(0)
-        self.stopMotors()
+        self.motors.stop()
 

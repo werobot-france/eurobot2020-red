@@ -6,9 +6,10 @@ from math import *
 class PositionWatcher:
     perimeter = 205
     axialDistance = 233.5
-    theta = pi/2
-    x = 932
-    y = 98
+    initialTheta = pi/2
+    theta = 0
+    x = 0
+    y = 0
 
     # left
     phaseA = DigitalInputDevice(15, True)
@@ -39,6 +40,7 @@ class PositionWatcher:
     
     def __init__(self, websocketManager):
         self.websocketManager = websocketManager
+        self.theta = self.initialTheta
            
     def watchTicks(self):
         while self.enabled:
@@ -112,3 +114,8 @@ class PositionWatcher:
 
     def setOnPositionChangedHandler(self, handler):
         self.onPositionChangedHandler = handler
+
+    def reset(self):
+        self.x = self.y = self.leftTicks = self.rightTicks = 0
+        self.theta = self.initialTheta
+        self.leftState = self.leftOldState = self.rightState = self.rightOldState = self.oldTicks = (0, 0)
